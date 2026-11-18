@@ -1,35 +1,47 @@
-describe('Agenda de Contatos', () => {
-    beforeEach(() => {
-        cy.visit('https://agenda-contatos-react.vercel.app/');
-    });
+describe('Agenda de contatos', () => {
+  // Nome único para não confundir com contatos de outras pessoas
+  const id = Date.now()
+  const nome = `Pedro Badaró ${id}`
+  const nomeEditado = `Pedro Editado ${id}`
 
-    it('Deve adicionar um novo contato', () => {
-        cy.get('input[placeholder="Nome"]').should('be.visible').type('Pedro Badaró');
-        cy.get('input[placeholder="E-mail"]').type('pedro@email.com');
-        cy.get('input[placeholder="Telefone"]').type('11999999999');
-        cy.get('button[type="submit"]').click();
+  const contato = (texto) => cy.contains('.contato', texto)
 
-        cy.contains('Pedro Badaró').should('exist');
-    });
+  beforeEach(() => {
+    cy.visit('/')
+    cy.get('form').should('be.visible')
+  })
 
-    it('Deve editar um contato existente', () => {
-        cy.contains('li', 'Pedro Badaró').within(() => {
-            cy.contains('Editar').click();
-        });
+  it('Deve incluir um novo contato', () => {
+    cy.get('input[placeholder="Nome"]').type(nome)
+    cy.get('input[placeholder="E-mail"]').type('pedro@email.com')
+    cy.get('input[placeholder="Telefone"]').type('11999999999')
+    cy.get('form button[type="submit"]').click()
 
-        cy.get('input[placeholder="Nome"]').clear().type('Pedro Atualizado');
-        cy.get('input[placeholder="E-mail"]').clear().type('novo@email.com');
-        cy.get('input[placeholder="Telefone"]').clear().type('11988888888');
-        cy.get('button[type="submit"]').click();
+    contato(nome)
+      .should('be.visible')
+      .and('contain', 'pedro@email.com')
+      .and('contain', '11999999999')
+  })
 
-        cy.contains('Pedro Atualizado').should('exist');
-    });
+  it('Deve alterar o contato incluído', () => {
+    contato(nome).find('.edit').click()
 
-    it('Deve remover um contato existente', () => {
-        cy.contains('li', 'Pedro Atualizado').within(() => {
-            cy.contains('Excluir').click();
-        });
+    cy.get('input[placeholder="Nome"]').should('have.value', nome)
+    cy.get('input[placeholder="Nome"]').clear().type(nomeEditado)
+    cy.get('input[placeholder="E-mail"]').clear().type('novo@email.com')
+    cy.get('input[placeholder="Telefone"]').clear().type('11988888888')
+    cy.get('form button[type="submit"]').should('contain', 'Salvar').click()
 
-        cy.contains('Pedro Atualizado').should('not.exist');
-    });
-});
+    contato(nomeEditado)
+      .should('be.visible')
+      .and('contain', 'novo@email.com')
+      .and('contain', '11988888888')
+    cy.contains('.contato', nome).should('not.exist')
+  })
+
+  it('Deve remover o contato alterado', () => {
+    contato(nomeEditado).find('.delete').click()
+
+    cy.contains('.contato', nomeEditado).should('not.exist')
+  })
+})
